@@ -29,19 +29,8 @@ void main()
 
     vec3 offset = vs_Translate;
     mat4 t = mat4(vs_Transform1, vs_Transform2, vs_Transform3, vs_Transform4);
-    // if (vs_Transform1[0] != 20.0) {
-    //     fs_Col = vec4(1.0, 0.0, 0.0, 1.0);
-    // } else {
-    //     fs_Col = vec4(0.0, 1.0, 0.0, 1.0);
-    // }
 
-    //offset.z = (sin((u_Time + offset.x) * 3.14159 * 0.1) + cos((u_Time + offset.y) * 3.14159 * 0.1)) * 1.5;
-
-    // Billboard pos: follows the camera
     vec4 newPos = t * vs_Pos;
-    // vec3 billboardPos = offset + vs_Pos.x * u_CameraAxes[0] + vs_Pos.y * u_CameraAxes[1];
-    vec3 billboardPos = offset + newPos.x * u_CameraAxes[0] + newPos.y * u_CameraAxes[1];
-
 
     gl_Position = u_ViewProj * newPos;
     //gl_Position = u_ViewProj * vs_Pos;

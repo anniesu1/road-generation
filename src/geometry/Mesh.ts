@@ -11,6 +11,12 @@ class Mesh extends Drawable {
   uvs: Float32Array;
   center: vec4;
 
+  offsets: Float32Array;
+  transform1: Float32Array; // Data for first col of transformation matrix
+  transform2: Float32Array;
+  transform3: Float32Array;
+  transform4: Float32Array;
+
   objString: string;
 
   constructor(objString: string, center: vec3) {
@@ -21,6 +27,9 @@ class Mesh extends Drawable {
   }
 
   create() {  
+    // This way you will be able to at least see one mesh instance being drawn.
+    this.numInstances = 1;
+    
     let posTemp: Array<number> = [];
     let norTemp: Array<number> = [];
     let uvsTemp: Array<number> = [];
@@ -77,6 +86,36 @@ class Mesh extends Drawable {
 
     console.log(`Created Mesh from OBJ`);
     this.objString = ""; // hacky clear
+  }
+
+  setInstanceVBOs(offsets: Float32Array, colors: Float32Array, transform1: Float32Array,
+    transform2: Float32Array, transform3: Float32Array, transform4: Float32Array) {
+    this.offsets = offsets;
+    this.colors = colors;
+    this.transform1 = transform1;
+    this.transform2 = transform2;
+    this.transform3 = transform3;
+    this.transform4 = transform4;
+
+    this.generateTranslate();
+    this.generateTransform1();
+    this.generateTransform2();
+    this.generateTransform3();
+    this.generateTransform4();
+    
+    gl.bindBuffer(gl.ARRAY_BUFFER, this.bufCol);
+    gl.bufferData(gl.ARRAY_BUFFER, this.colors, gl.STATIC_DRAW);
+    gl.bindBuffer(gl.ARRAY_BUFFER, this.bufTranslate);
+    gl.bufferData(gl.ARRAY_BUFFER, this.offsets, gl.STATIC_DRAW);
+
+    gl.bindBuffer(gl.ARRAY_BUFFER, this.bufTransform1);
+    gl.bufferData(gl.ARRAY_BUFFER, this.transform1, gl.STATIC_DRAW);
+    gl.bindBuffer(gl.ARRAY_BUFFER, this.bufTransform2);
+    gl.bufferData(gl.ARRAY_BUFFER, this.transform2, gl.STATIC_DRAW);
+    gl.bindBuffer(gl.ARRAY_BUFFER, this.bufTransform3);
+    gl.bufferData(gl.ARRAY_BUFFER, this.transform3, gl.STATIC_DRAW);
+    gl.bindBuffer(gl.ARRAY_BUFFER, this.bufTransform4);
+    gl.bufferData(gl.ARRAY_BUFFER, this.transform4, gl.STATIC_DRAW);
   }
 };
 
