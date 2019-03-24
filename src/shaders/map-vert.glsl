@@ -17,22 +17,22 @@ in vec4 vs_Transform2;
 in vec4 vs_Transform3;
 in vec4 vs_Transform4;
 
-out vec4 fs_Col;
-out vec4 fs_Pos;
-out vec4 fs_Nor;
+out vec2 fs_Pos;
 
 void main()
 {
-    fs_Col = vs_Col;
-    fs_Pos = vs_Pos;
-    fs_Nor = vs_Nor;
+    // fs_Col = vs_Col;
+    // fs_Pos = vs_Pos;
+    // fs_Nor = vs_Nor;
 
-    vec3 offset = vs_Translate;
-    mat4 t = mat4(vs_Transform1, vs_Transform2, vs_Transform3, vs_Transform4);
+    // vec3 offset = vs_Translate;
+    // mat4 t = mat4(vs_Transform1, vs_Transform2, vs_Transform3, vs_Transform4);
 
-    vec4 newPos = t * vs_Pos;
+    // vec4 newPos = t * vs_Pos;
 
-    gl_Position = u_ViewProj * newPos;
-    //gl_Position = u_ViewProj * vs_Pos;
+    // gl_Position = u_ViewProj * newPos;
+    // //gl_Position = u_ViewProj * vs_Pos;
 
+    fs_Pos = vs_Pos.xy;
+    gl_Position = vs_Pos;
 }

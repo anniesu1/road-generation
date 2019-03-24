@@ -1,4 +1,4 @@
-import {vec3} from 'gl-matrix';
+import {vec3, mat4} from 'gl-matrix';
 import * as Stats from 'stats-js';
 import * as DAT from 'dat-gui';
 import Square from './geometry/Square';
@@ -7,6 +7,7 @@ import OpenGLRenderer from './rendering/gl/OpenGLRenderer';
 import Camera from './Camera';
 import {setGL} from './globals';
 import ShaderProgram, {Shader} from './rendering/gl/ShaderProgram';
+import LSystem from './lsystem/LSystem';
 
 // Define an object with application parameters and button callbacks
 // This will be referred to by dat.GUI's functions that add GUI elements.
@@ -18,16 +19,21 @@ const controls = {
 
 let square: Square;
 let screenQuad: ScreenQuad;
-let background: ScreenQuad;
+let lSystem: LSystem;
+
+let highwayT: mat4[];
+let roadT: mat4[];
+
 let time: number = 0.0;
+
 
 function loadScene() {
   square = new Square();
   square.create();
+
+  // Create terrain map
   screenQuad = new ScreenQuad();
-  background = new ScreenQuad();
   screenQuad.create();
-  background.create();
 
   // Set up instanced rendering data arrays here.
   // This example creates a set of positional
@@ -143,6 +149,32 @@ function main() {
     new Shader(gl.FRAGMENT_SHADER, require('./shaders/map-frag.glsl')),
   ]);
 
+  /// *** Render pass to fill our texture
+  const textureShader = new ShaderProgram([
+    new Shader(gl.VERTEX_SHADER, require('./shaders/map-vert.glsl')),
+    new Shader(gl.FRAGMENT_SHADER, require('./shaders/map-frag.glsl')),
+  ]);
+
+  const texturecanvas = canvas;
+
+  const textureRenderer = new OpenGLRenderer(texturecanvas);
+
+  if (textureRenderer == null) {
+    console.log('texture renderer null');
+  }
+
+  // Resolution for the L-system
+  const width = 2000;
+  const height = 2000;
+
+  textureRenderer.setSize(width, height);
+  textureRenderer.setClearColor(0, 0, 0, 1);
+  let textureData: Uint8Array = textureRenderer.renderTexture(camera, textureShader, [screenQuad]);
+
+  lSystem = new LSystem("F", 5, 90, highwayT, roadT, width, height, textureData);
+  console.log('Created lSystem');
+
+
   // This function will be called every frame
   function tick() {
     camera.update();
@@ -171,11 +203,8 @@ function main() {
     } else {
       mapShader.setShowTerrainBinary(0.0);
     }
+    renderer.render(camera, mapShader, [screenQuad]);
 
-
-    //renderer.render(camera, flat, [screenQuad]);
-    //renderer.render(camera, flat, [background]);
-    renderer.render(camera, mapShader, [square]);
     // renderer.render(camera, instancedShader, [
     //   square,
     // ]);
@@ -197,6 +226,7 @@ function main() {
   camera.updateProjectionMatrix();
   flat.setDimensions(window.innerWidth, window.innerHeight);
 
+  
   // Start the render loop
   tick();
 }

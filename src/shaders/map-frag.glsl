@@ -5,8 +5,7 @@ uniform float u_ShowPopulation;
 uniform float u_ShowTerrainGradient;
 uniform float u_ShowTerrainBinary;
 
-in vec4 fs_Col;
-in vec4 fs_Pos;
+in vec2 fs_Pos;
 
 out vec4 out_Col;
 
@@ -219,19 +218,25 @@ float fbmPerlin(vec2 pos, float octaves, float seed) {
 */
 void main()
 {
-    //vec3 landCol = vec3(0.2, 0.6, 0.1);
-    vec3 landCol = vec3(128.f, 200.f, 101.f) / 255.0;
-    vec3 waterCol = vec3(0.0, 0.0, 0.5);
-    vec3 populationCol = vec3(155.f, 106.f, 196.f) / 255.0;
-
-    float height = dampen(gain(0.98, fbmPerlin(vec2(fs_Pos.x, fs_Pos.y) / 1.0f, 10.f, 1.328)));
-    float population = perlin(vec2(fs_Pos.x, fs_Pos.y) / 0.2, 3.206) + 0.5;
-
-    // Debugging: ensure population is in correct range
-    if (population < 0.0 || population > 1.0) {
-        out_Col = vec4(1.0, 0.0, 0.0, 1.0);
+    if (u_ShowPopulation == 0.0f && u_ShowTerrainBinary == 0.0f && u_ShowTerrainGradient == 0.0f) {
+        out_Col = vec4(0.f, 0.1f, 0.5f, 1.f);
         return;
     }
+
+    vec3 landCol = vec3(128.f, 200.f, 101.f) / 255.0;
+    vec3 waterCol = vec3(0.0, 0.0, 0.5);
+    //vec3 populationCol1 = vec3(102.f, 71.f, 127.f) / 255.0;
+    vec3 populationCol1 = vec3(1.0, 1.0, 1.0);
+    vec3 populationCol2 = vec3(68.f, 48.f, 44.f) / 255.0;
+
+    float height = dampen(gain(0.98, fbmPerlin(vec2(fs_Pos.x, fs_Pos.y) / 2.0f, 10.f, 1.328)));
+    float population = perlin(vec2(fs_Pos.x, fs_Pos.y) / 1.0, 3.206) + 0.5;
+
+    // Debugging: ensure population is in correct range
+    // if (population < 0.0) {
+    //     out_Col = vec4(1.0, 0.0, 0.0, 1.0);
+    //     return;
+    // }
 
     vec3 terrainCol;
     vec3 finalCol;
@@ -249,7 +254,8 @@ void main()
     }
 
     // Calculate population color 
-    populationCol = populationCol * population;
+    //vec3 populationCol = mix(populationCol1, populationCol2, population);
+    vec3 populationCol = populationCol1 * population;
 
     // Case on which combination of terrain/population to display
     if (u_ShowPopulation == 1.0 && (u_ShowTerrainBinary == 1.0 || u_ShowTerrainGradient == 1.0)) {
@@ -264,5 +270,3 @@ void main()
 
     out_Col = vec4(finalCol, 1.0);
 }
-
-// If both: overlay both with 0.5 opacity each

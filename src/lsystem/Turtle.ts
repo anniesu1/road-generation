@@ -18,24 +18,6 @@ export default class Turtle {
         this.depth = depth;
     }
 
-    // Rotate the turtle's _dir_ vector by each of the 
-    // Euler angles indicated by the input.
-
-    // rotate(axis: vec3, degrees: number) {
-    //     // Define rotation quaternion
-    //     let q: quat = quat.create();
-    //     vec3.normalize(axis, axis);
-    //     quat.setAxisAngle(q, axis, degrees * Math.PI / 180.0);
-    //     quat.normalize(q, q);
-    
-    //     // Update the orientation direction of our turtle
-    //     this.currOrientation = vec3.transformQuat(this.currOrientation, this.currOrientation, q);
-    //     vec3.normalize(this.currOrientation, this.currOrientation);
-    
-    //     // Save the current rotation in our turtle's quaternion
-    //     quat.rotationTo(this.orientation, vec3.fromValues(0, 1, 0), this.currOrientation);
-    // }
-
     rotate(alpha: number, beta: number, gamma: number) {
         // Add a bit of noise to the angles
         // var randX = Math.random();
