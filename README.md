@@ -35,6 +35,9 @@ help us inform the directionality of the Turtle.
 the noise functions defined above in the 2D Map Data section). At each of these city centers, a Turtle is created in order to
 draw highways. 
 
+The squares rendered in this scene are the city centers
+![](citycenters.png)
+
 ### Road system
 - I was only able to implement highways, as I had a lot of difficulty with this homework...........the only highway constraint 
 is that it may not go out of bounds of the screen (this is done using a simple check to make sure coordinates are within NDC-space).
