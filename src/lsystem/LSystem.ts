@@ -40,8 +40,9 @@ export default class LSystem {
 
     highwayLength: number = 0.08;
 
-    constructor(axiom: string, numIterations: number, 
-                rotationAngle: number, highwayT: mat4[], roadT: mat4[], width: number, height: number, texture: Uint8Array) {
+    constructor(axiom: string, numIterations: number, rotationAngle: number, 
+                highwayT: mat4[], roadT: mat4[], width: number, height: number, 
+                texture: Uint8Array) {
         // Set some member vars
         this.grammar = axiom;
         this.numIterations = numIterations;
@@ -117,12 +118,12 @@ export default class LSystem {
         this.intersections.push(intersection3);
 
         // Begin expansion
-        this.expandHighway();
+        this.expandHighway(numIterations);
     }
 
-    expandHighway() {
+    expandHighway(numIterations: number) {
         let counter = 0;
-        while (this.turtleHistory.length != 0 && counter < 100) {
+        while (this.turtleHistory.length != 0 && counter < numIterations) {
             counter++; 
 
             this.currTurtle = this.turtleHistory.pop();
@@ -133,9 +134,9 @@ export default class LSystem {
                 this.firstHighway = false;
 
                 // Branching of 3
-                let theta1 = 120.0;
+                let theta1 = this.rotationAngle;
                 let theta2 = 0;
-                let theta3 = -120.0;
+                let theta3 = -this.rotationAngle;
 
                 let realTurtle1 = new Turtle(vec3.fromValues(this.currTurtle.position[0], this.currTurtle.position[1], this.currTurtle.position[2]), 
                                             this.currTurtle.orientation,
@@ -178,7 +179,7 @@ export default class LSystem {
                 }
             } else {
                 // Branching of 1
-                let rotateAmt1 = (120 * Math.random() - 60);
+                let rotateAmt1 = (this.rotationAngle * Math.random() - 60);
                 let rotateAmt2 = 0
 
                 let testTurtle1 = new Turtle(vec3.fromValues(this.currTurtle.position[0], this.currTurtle.position[1], this.currTurtle.position[2]), 

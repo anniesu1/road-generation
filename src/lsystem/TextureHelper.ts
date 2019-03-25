@@ -19,38 +19,39 @@ export default class TextureHelper {
 	}
 
 	getElevation(x: number, y: number) : number {
+		// Convert to pixel space 
 		x += 1.0;
 		y += 1.0;
 		x *= 0.5;
 		y *= 0.5;
-
 		x *= this.width;
 		y *= this.height;
 		x = Math.floor(x);
 		y = Math.floor(y);
+
 		let blue: number = this.texture[4.0 * (x + this.width * y) + 2.0];
 		let green: number = this.texture[4.0 * (x + this.width * y) + 1.0];
 
 		if (blue > green){
-				return 0; // Water
+				return 0;
 		} else {
-				return 1; // Land
+				return 1;
 		}
 	}
 
 	getPopulation(x: number, y: number) : number {
-			x += 1.0;
-			y += 1.0;
-			x *= 0.5;
-			y *= 0.5;
+		// Convert to pixel space 
+		x += 1.0;
+		y += 1.0;
+		x *= 0.5;
+		y *= 0.5;
+		x *= this.width;
+		y *= this.height;
+		x = Math.floor(x);
+		y = Math.floor(y);
 
-			x *= this.width;
-			y *= this.height;
-			x = Math.floor(x);
-			y = Math.floor(y);
-
-			let population: number = this.texture[4.0 * (x + this.width * y) + 3.0];
-			return population;
+		let population: number = this.texture[4.0 * (x + this.width * y) + 3.0];
+		return population;
 	}
 
 }

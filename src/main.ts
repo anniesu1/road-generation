@@ -14,7 +14,9 @@ import LSystem from './lsystem/LSystem';
 const controls = {
   'Show pop. density': false,
   'Show terrain elevation': false,
-  'Show land vs. water': false,
+  'Show land vs. water': true,
+  'Iterations': 100,
+  'Rotation angle': 120
 };
 
 let square: Square;
@@ -25,6 +27,9 @@ let highwayT: mat4[] = [];
 let roadT: mat4[] = [];
 
 let time: number = 0.0;
+
+let prevIter: number = 100;
+let prevRotation: number = 120;
 
 
 function loadScene() {
@@ -152,10 +157,6 @@ function setTransformArrays(transforms: mat4[], col: vec4) {
   let transform3: Float32Array = new Float32Array(transform3Array);
   let transform4: Float32Array = new Float32Array(transform4Array);
 
-  // square.setInstanceVBOs(offsets, colors, transform1, transform2, 
-  //                        transform3, transform4);
-  // square.setNumInstances(branchT.length);
-
   square.setInstanceVBOs(offsets, colors, transform1, transform2, transform3, transform4);
   square.setNumInstances(transforms.length);
 }
@@ -182,6 +183,8 @@ function main() {
       controls["Show terrain elevation"] = false;
       controls["Show land vs. water"] = true;
     });
+  gui.add(controls, 'Iterations', 10, 200);
+  gui.add(controls, 'Rotation angle', 0, 360);
 
 
   // get canvas and webgl context
@@ -242,7 +245,7 @@ function main() {
   let textureData: Uint8Array = textureRenderer.renderTexture(camera, textureShader, [screenQuad]);
 
   lSystem = new LSystem("F", 5, 90, highwayT, roadT, width, height, textureData);
-  lSystem.expandHighway();
+  lSystem.expandHighway(100);
   setTransformArrays(highwayT, vec4.fromValues(0.0, 0.0, 0.0, 1.0));
   console.log('Created lSystem');
 
@@ -256,6 +259,20 @@ function main() {
     mapShader.setTime(time++);
     gl.viewport(0, 0, window.innerWidth, window.innerHeight);
     renderer.clear();
+
+    // Pass user input the LSystem
+    if (prevIter != controls.Iterations || prevRotation != controls["Rotation angle"]) {
+      prevIter = controls.Iterations;
+      prevRotation = controls["Rotation angle"];
+
+      // Clear transformation matrices and make a new L-System
+      highwayT = [];
+      roadT = [];
+      lSystem = new LSystem("F", controls.Iterations, controls["Rotation angle"], highwayT, 
+                            roadT, width, height, textureData);
+      lSystem.expandHighway(controls.Iterations); 
+      setTransformArrays(highwayT, vec4.fromValues(0.0, 0.0, 0.0, 1.0));      
+    }
 
     // Pass user input to shaders
     if (controls["Show pop. density"]) {
