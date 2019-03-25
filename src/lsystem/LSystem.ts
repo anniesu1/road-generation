@@ -193,11 +193,15 @@ export default class LSystem {
 
                 // testTurtle1.rotate(0, 0, rotateAmt2);
                 // testTurtle2.rotate(0, 0, rotateAmt2);
+
+                testTurtle1.moveForward(0.05);
+                testTurtle2.moveForward(0.05);
+
                 testTurtle1.rotate(0, 0, rotateAmt1);
                 testTurtle2.rotate(0, 0, rotateAmt2);
 
-                testTurtle1.moveForward(0.1);
-                testTurtle2.moveForward(0.1);
+                testTurtle1.moveForward(-0.05);
+                testTurtle2.moveForward(-0.05);
 
                 let distance1 = vec2.distance(vec2.fromValues(testTurtle1.position[0], testTurtle1.position[1]), 
                                               this.currTurtle.target);

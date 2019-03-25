@@ -12,9 +12,9 @@ import LSystem from './lsystem/LSystem';
 // Define an object with application parameters and button callbacks
 // This will be referred to by dat.GUI's functions that add GUI elements.
 const controls = {
-  'Show pop. density': false,
+  'Show pop. density': true,
   'Show terrain elevation': false,
-  'Show land vs. water': true,
+  'Show land vs. water': false,
   'Iterations': 100,
   'Rotation angle': 120
 };
