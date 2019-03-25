@@ -38,6 +38,8 @@ draw highways.
 The squares rendered in this scene are the city centers
 ![](citycenters.png)
 
+- The LSystem classes also contain an `Intersection` and `Edge` class which are utilized within the LSystem class itself. The `Intersection` class stores a position and has a function that returns whether two input Edges intersect or not. The `Edge` class contains an origin, endpoint, direction, and length. It is simply a wrapper class that represents a segment of road. 
+
 ### Road system
 - I was only able to implement highways, as I had a lot of difficulty with this homework...........the only highway constraint 
 is that it may not go out of bounds of the screen (this is done using a simple check to make sure coordinates are within NDC-space).
