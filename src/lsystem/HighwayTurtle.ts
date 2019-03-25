@@ -10,7 +10,7 @@ export default class HighwayTurtle extends Turtle {
         super(pos, orient, depth);
     }
 
-    // expansionRuleFirstExpansion(expansionTurtles: any[]) {
+    // firstExpand(expansionTurtles: any[]) {
     //     if (this.expandFlag && !this.waterFlag) {
     //       if (!this.rotationFlag) {
     //         let cityCenter0: Point = new Point(vec3.fromValues(420, 0, 1890));

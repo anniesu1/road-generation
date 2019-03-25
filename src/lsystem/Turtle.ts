@@ -2,20 +2,21 @@
 // It should at least keep track of its current position, current orientation, 
 // and recursion depth (how many [ characters have been found while drawing before ]s)
 
-import { vec3, vec4, quat, mat4 } from 'gl-matrix';
+import { vec2, vec3, vec4, quat, mat4 } from 'gl-matrix';
 
 export default class Turtle {
     position: vec3 = vec3.fromValues(0.0, 0.0, 0.0);
     up: vec3 = vec3.fromValues(0, 1, 0);
     orientation: quat;
-    depth: number = 0;
     scaleFalloff: number = 0.8;
     heightFalloff: number = 0.5;
+    branchNumber: number;
+    target: vec2 = vec2.create();
 
-    constructor(pos: vec3, orient: quat, depth: number) {
+    constructor(pos: vec3, orient: quat, branchNumber: number) {
         this.position = pos;
         this.orientation = orient;
-        this.depth = depth;
+        this.branchNumber = branchNumber;
     }
 
     rotate(alpha: number, beta: number, gamma: number) {
@@ -42,6 +43,14 @@ export default class Turtle {
         // Update the orientation of the turtle
         quat.multiply(this.orientation, this.orientation, outQuat);
     }
+
+    rotateByUp(degrees: number) {
+        let q: quat = quat.create();
+        quat.setAxisAngle(q, this.up, degrees * Math.PI / 180.0);
+
+        quat.multiply(this.orientation, this.orientation, q);
+    
+      }
 
     // Translate the turtle along the input vector.
     // Does NOT change the turtle's _dir_ vector
@@ -74,8 +83,22 @@ export default class Turtle {
         return output;
     };
 
-    // Should get its own transformation matrix
-    getTransformationMatrix(geomType: string) : mat4 {
+    // Return vec4 forward 
+    getForward() : vec4 {
+        let localForward: vec4 = vec4.create();
+        let R: mat4 = mat4.create();
+        mat4.fromQuat(R, this.orientation);
+
+        // Update forward by the orientation quaternion matrix
+        vec4.transformMat4(localForward, vec4.fromValues(this.up[0],
+                                                         this.up[1],
+                                                         this.up[2],
+                                                         1.0), R);
+        return localForward;
+    }
+
+    // Should get its own transformation matrix TODO: update for road branching
+    getTransformationMatrix(roadType: string) : mat4 {
         // Translate
         let T: mat4 = mat4.create();
         mat4.fromTranslation(T, this.position); 
@@ -84,19 +107,16 @@ export default class Turtle {
         let R: mat4 = mat4.create();
         mat4.fromQuat(R, this.orientation);
 
-        // Scale, based on depth
+        // Scale
         let S: mat4 = mat4.create();
-        let scaleTuner = Math.pow(this.scaleFalloff, this.depth);
-        let heightTuner = Math.pow(this.heightFalloff, this.depth);
-
-        // Scaling values differ based on if we are drawing a flower or branch
-        if (geomType === 'branch') {
-            mat4.fromScaling(S, vec3.fromValues(0.2 * scaleTuner, 3.0 * heightTuner, 
-                0.2 * scaleTuner));
-        } else if (geomType === 'leaf') {
-            mat4.fromScaling(S, vec3.fromValues(0.5 * scaleTuner, 
-                                                0.5 * scaleTuner, 
-                                                0.5 * scaleTuner));
+ 
+        // Scaling values differ based on road type
+        if (roadType === 'highway') {
+            mat4.fromScaling(S, vec3.fromValues(.01, 0.1, 1.0));
+        } else if (roadType === 'road') {
+            mat4.fromScaling(S, vec3.fromValues(0.1, 0.1, 0.1));
+        } else if (roadType === 'square') {
+            mat4.fromScaling(S, vec3.fromValues(0.05, 0.05, 0.05));
         }
 
         // Multiply together to form transformation matrix
@@ -112,13 +132,13 @@ export default class Turtle {
         let orientCopy: quat = quat.create();
         quat.copy(orientCopy, this.orientation);
     
-        return new Turtle(posCopy, orientCopy, this.depth + 1);
+        return new Turtle(posCopy, orientCopy, this.branchNumber);
     }
 
     // Write over the current info with that of the input Turtle
     writeOver(turtle: Turtle) {
         vec3.copy(this.position, turtle.position);
         quat.copy(this.orientation, turtle.orientation);
-        this.depth = turtle.depth - 1;
+        this.branchNumber = turtle.branchNumber;
     }
 }

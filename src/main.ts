@@ -1,4 +1,4 @@
-import {vec3, mat4} from 'gl-matrix';
+import {vec3, vec4, mat4} from 'gl-matrix';
 import * as Stats from 'stats-js';
 import * as DAT from 'dat-gui';
 import Square from './geometry/Square';
@@ -21,8 +21,8 @@ let square: Square;
 let screenQuad: ScreenQuad;
 let lSystem: LSystem;
 
-let highwayT: mat4[];
-let roadT: mat4[];
+let highwayT: mat4[] = [];
+let roadT: mat4[] = [];
 
 let time: number = 0.0;
 
@@ -88,6 +88,76 @@ function loadScene() {
   square.setInstanceVBOs(offsets, colors, transform1, transform2, 
     transform3, transform4);
   square.setNumInstances(n * n); // grid of "particles"
+}
+
+function setTransformArrays(transforms: mat4[], col: vec4) {
+  // Set up instanced rendering data arrays here.
+  // This example creates a set of positional
+  // offsets and gradiated colors for a 100x100 grid
+  // of squares, even though the VBO data for just
+  // one square is actually passed to the GPU
+
+  let offsetsArray = [];
+  let colorsArray = [];
+  let n: number = 100.0;
+  let transform1Array = [];
+  let transform2Array = [];
+  let transform3Array = [];
+  let transform4Array = [];
+
+  // We will no longer need offsets (handled in the transformation array)
+  for (let i = 0; i < transforms.length; i++) {
+    let T = transforms[i];
+
+    // Dummy - todo, get rid of offsets
+    offsetsArray.push(0);
+    offsetsArray.push(0);
+    offsetsArray.push(0);
+
+    // Column 1
+    transform1Array.push(T[0]);
+    transform1Array.push(T[1]);
+    transform1Array.push(T[2]);
+    transform1Array.push(T[3]);
+
+    // Column 2
+    transform2Array.push(T[4]);
+    transform2Array.push(T[5]);
+    transform2Array.push(T[6]);
+    transform2Array.push(T[7]);
+
+    // Column 3
+    transform3Array.push(T[8]);
+    transform3Array.push(T[9]);
+    transform3Array.push(T[10]);
+    transform3Array.push(T[11]);
+
+    // Column 4
+    transform4Array.push(T[12]);
+    transform4Array.push(T[13]);
+    transform4Array.push(T[14]);
+    transform4Array.push(T[15]);
+
+    // Color (brown)
+    colorsArray.push(col[0]);
+    colorsArray.push(col[1]);
+    colorsArray.push(col[2]);
+    colorsArray.push(col[3]);
+  }
+
+  let offsets: Float32Array = new Float32Array(offsetsArray);
+  let colors: Float32Array = new Float32Array(colorsArray);
+  let transform1: Float32Array = new Float32Array(transform1Array);
+  let transform2: Float32Array = new Float32Array(transform2Array);
+  let transform3: Float32Array = new Float32Array(transform3Array);
+  let transform4: Float32Array = new Float32Array(transform4Array);
+
+  // square.setInstanceVBOs(offsets, colors, transform1, transform2, 
+  //                        transform3, transform4);
+  // square.setNumInstances(branchT.length);
+
+  square.setInstanceVBOs(offsets, colors, transform1, transform2, transform3, transform4);
+  square.setNumInstances(transforms.length);
 }
 
 function main() {
@@ -164,14 +234,16 @@ function main() {
   }
 
   // Resolution for the L-system
-  const width = 2000;
-  const height = 2000;
+  const width = window.innerWidth; // TODO: do i need to set this ? 
+  const height = window.innerHeight;
 
   textureRenderer.setSize(width, height);
   textureRenderer.setClearColor(0, 0, 0, 1);
   let textureData: Uint8Array = textureRenderer.renderTexture(camera, textureShader, [screenQuad]);
 
   lSystem = new LSystem("F", 5, 90, highwayT, roadT, width, height, textureData);
+  lSystem.expandHighway();
+  setTransformArrays(highwayT, vec4.fromValues(0.0, 0.0, 0.0, 1.0));
   console.log('Created lSystem');
 
 
@@ -205,9 +277,9 @@ function main() {
     }
     renderer.render(camera, mapShader, [screenQuad]);
 
-    // renderer.render(camera, instancedShader, [
-    //   square,
-    // ]);
+    renderer.render(camera, instancedShader, [
+      square,
+    ]);
     stats.end();
 
     // Tell the browser to call `tick` again whenever it renders a new frame

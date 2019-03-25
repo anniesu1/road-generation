@@ -3,25 +3,42 @@ import Turtle from './Turtle';
 import ExpansionRule from './ExpansionRule';
 import DrawingRule from './DrawingRule';
 import ShaderProgram from '../rendering/gl/ShaderProgram';
+import Intersection from './Intersection';
+import Edge from './Edge';
+import TextureHelper from './TextureHelper';
+//import { transformMat2 } from 'gl-matrix/src/gl-matrix/vec2';
 
 export default class LSystem {
     highwayTurtle: Turtle = new Turtle(vec3.fromValues(0, 0, 0), 
                                 quat.create(), 0); // Current turtle
     roadTurtle: Turtle = new Turtle(vec3.fromValues(0, 0, 0), 
                                 quat.create(), 0); // Current turtle
+    currTurtle: Turtle = new Turtle(vec3.fromValues(0, 0, 0), 
+                                    quat.create(), 0); // Current turtle
+    firstHighway: boolean = false;
     turtleHistory: Turtle[] = []; // Stack of turtle history
     drawingRules: Map<string, any> = new Map(); // Map of drawing rules
     expansionRules : Map<string, any> = new Map();
     grammar: string;
     numIterations: number;
     rotationAngle: number;
-    highwayT: mat4[];
-    roadT: mat4[];
-    nodes: mat4[];
-    edges: mat4[]; // TODO: change
+    highwayT: mat4[] = [];
+    roadT: mat4[] = [];
+
+    highwayEdges: Array<Edge> = new Array<Edge>();
+    intersections: Array<Intersection> = new Array<Intersection>();
+    edges: Array<Edge> = new Array<Edge>();
+
     width: number;
     height: number;
     texture: Uint8Array;
+    textureHelper: TextureHelper;
+
+    city1: vec2 = vec2.fromValues(-0.8, -0.5);
+    city2: vec2 = vec2.fromValues(-0.3, 0.2);
+    city3: vec2 = vec2.fromValues(0.9, -0.8);
+
+    highwayLength: number = 0.08;
 
     constructor(axiom: string, numIterations: number, 
                 rotationAngle: number, highwayT: mat4[], roadT: mat4[], width: number, height: number, texture: Uint8Array) {
@@ -36,7 +53,14 @@ export default class LSystem {
         this.roadTurtle = new Turtle(vec3.fromValues(0.0, 0.0, 0.0), quat.create(), 0); // TODO: make starting location random
         this.width = width;
         this.height = height;
-        this.texture = texture;
+
+        // Copy the texture input into LSystem object
+        this.texture = new Uint8Array(texture.length);
+        for (var i = 0; i < texture.length; i++) {
+          this.texture[i] = texture[i];
+        }
+
+        this.textureHelper = new TextureHelper(this.texture, this.width, this.height);
 
         // Set drawing rules
         this.setInitialDrawingRules();
@@ -59,96 +83,240 @@ export default class LSystem {
         sExpansions.set(1.0, "FL");
         let sRule = new ExpansionRule("S", sExpansions);
         this.expansionRules.set("S", sRule);
+
+        // Set up highway turtles at each city center
+        console.log('width: ' +  this.width);
+        console.log('height: ' + this.height);
+        this.currTurtle = new Turtle(vec3.fromValues(-0.8, -0.5, 1), quat.create(), 1);
+        this.highwayT.push(this.currTurtle.getTransformationMatrix('square'));
+        this.currTurtle.target = this.city2;
+        this.turtleHistory.push(this.currTurtle);
+        let intersection1 = new Intersection();
+        intersection1.setPos(vec2.fromValues(this.currTurtle.position[0], this.currTurtle.position[1]));
+        this.intersections.push(intersection1);
+
+        this.currTurtle = new Turtle(vec3.fromValues(-0.3, 0.2, 1), quat.create(), 1);
+        this.currTurtle.target = this.city3;
+        this.turtleHistory.push(this.currTurtle);
+        this.highwayT.push(this.currTurtle.getTransformationMatrix('square'));
+
+        let intersection2 = new Intersection();
+        intersection2.setPos(vec2.fromValues(this.currTurtle.position[0], this.currTurtle.position[1]));
+        this.intersections.push(intersection2);
+
+        this.currTurtle = new Turtle(vec3.fromValues(.9, -0.8, 1), quat.create(), 1);
+        this.currTurtle.rotate(0, 0, 60);
+        this.currTurtle.target = this.city1;
+        this.turtleHistory.push(this.currTurtle);
+        this.highwayT.push(this.currTurtle.getTransformationMatrix('square'));
+        this.currTurtle.moveForward(0.1);
+//        this.highwayT.push(this.currTurtle.getTransformationMatrix('highway'));
+
+        let intersection3 = new Intersection();
+        intersection3.setPos(vec2.fromValues(this.currTurtle.position[0], this.currTurtle.position[1]));
+        this.intersections.push(intersection3);
+
+        // Begin expansion
+        this.expandHighway();
     }
 
-    // createHighway() {
-    //     let counter = 0;
+    expandHighway() {
+        let counter = 0;
+        while (this.turtleHistory.length != 0 && counter < 100) {
+            counter++; 
 
+            this.currTurtle = this.turtleHistory.pop();
+            console.log('currTurtle: ' + this.currTurtle);
 
-    //     while (this.turtleHistory.length != 0) {
-    //         if (counter > 150) {
-    //             return;
-    //         }
-    //         counter++;
+            if (this.firstHighway) {
+                console.log('First highway');
+                this.firstHighway = false;
 
-    //         this.currTurtle = this.turtleHistory.pop();
-    //         if (this.first1) {
-    //             this.currTurtle.branchNumber = 3;
-    //             this.first1 = false;
-    //         }
-    //         if (this.currTurtle.branchNumber == 1) {
-    //             let rotateAmt1 = (120 * Math.random() - 60);
-    //             let rotateAmt2 = (120 * Math.random() - 60);
-    //             let rotateAmt3 = (120 * Math.random() - 60);
+                // Branching of 3
+                let theta1 = 120.0;
+                let theta2 = 0;
+                let theta3 = -120.0;
 
-
-    //             let testTurtle1 = new Turtle(vec3.fromValues(this.currTurtle.position[0], this.currTurtle.position[1], this.currTurtle.position[2]), 
-    //                                          vec3.fromValues(this.currTurtle.forward[0], this.currTurtle.forward[1], this.currTurtle.forward[2]), 
-    //                                          vec3.fromValues(this.currTurtle.right[0], this.currTurtle.right[1], this.currTurtle.right[2]),
-    //                                          this.currTurtle.depth);
-    //             let testTurtle2 = new Turtle(vec3.fromValues(this.currTurtle.position[0], this.currTurtle.position[1], this.currTurtle.position[2]), 
-    //                                          vec3.fromValues(this.currTurtle.forward[0], this.currTurtle.forward[1], this.currTurtle.forward[2]), 
-    //                                          vec3.fromValues(this.currTurtle.right[0], this.currTurtle.right[1], this.currTurtle.right[2]),
-    //                                          this.currTurtle.depth);                
-                                             
-    //             let testTurtle3 = new Turtle(vec3.fromValues(this.currTurtle.position[0], this.currTurtle.position[1], this.currTurtle.position[2]), 
-    //                                          vec3.fromValues(this.currTurtle.forward[0], this.currTurtle.forward[1], this.currTurtle.forward[2]), 
-    //                                          vec3.fromValues(this.currTurtle.right[0], this.currTurtle.right[1], this.currTurtle.right[2]),
-    //                                          this.currTurtle.depth);                
+                let realTurtle1 = new Turtle(vec3.fromValues(this.currTurtle.position[0], this.currTurtle.position[1], this.currTurtle.position[2]), 
+                                            this.currTurtle.orientation,
+                                            this.currTurtle.branchNumber - 1);
                 
-    //             testTurtle1.rotate(rotateAmt1);
-    //             testTurtle2.rotate(rotateAmt2);
-    //             testTurtle3.rotate(rotateAmt3);
+                let realTurtle2 = new Turtle(vec3.fromValues(this.currTurtle.position[0], this.currTurtle.position[1], this.currTurtle.position[2]),
+                                                this.currTurtle.orientation, 
+                                                this.currTurtle.branchNumber - 1);
 
-    //             testTurtle1.moveForward(0.1);
-    //             testTurtle2.moveForward(0.1);
-    //             testTurtle3.moveForward(0.1);
+                let realTurtle3 = new Turtle(vec3.fromValues(this.currTurtle.position[0], this.currTurtle.position[1], this.currTurtle.position[2]), 
+                                                this.currTurtle.orientation,
+                                                this.currTurtle.branchNumber - 1);    
+                // Move pivot
+                realTurtle1.moveForward(-0.05);
+                realTurtle2.moveForward(-0.05);
+                realTurtle3.moveForward(-0.05);
+                                                
+                realTurtle1.rotate(0, 0, theta1);
+                realTurtle2.rotate(0, 0, theta2);
+                realTurtle3.rotate(0, 0, theta3);
 
-    //             let pop1 = this.getPopulation(testTurtle1.position[0], testTurtle1.position[1]);
-    //             let pop2 = this.getPopulation(testTurtle2.position[0], testTurtle2.position[1]);
-    //             let pop3 = this.getPopulation(testTurtle3.position[0], testTurtle3.position[1]);
+                realTurtle1.moveForward(0.05);
+                realTurtle2.moveForward(0.05);
+                realTurtle3.moveForward(0.05);
 
-    //             if (pop1 > pop2 && pop1 > pop3) {
-    //                 this.rotateTurtle(rotateAmt1);  
-    //             } else if (pop2 > pop3) {
-    //                 this.rotateTurtle(rotateAmt2);  
-    //             } else {
-    //                 this.rotateTurtle(rotateAmt3);
-    //             }
-    //             if (this.placeEdge(this.highwayLength + Math.random() * 0.02 - 0.01, 0.005)) {
-    //                 this.turtleStack.push(this.currTurtle);
-    //             }
+                this.currTurtle = realTurtle1;
+                if (this.satisfyConstraints()) {
+                    console.log('push real turtle 1');
+                    this.turtleHistory.push(realTurtle1);
+                }
+                this.currTurtle = realTurtle2;
+                if (this.satisfyConstraints()) {
+                    console.log('push real turtle 2');
+                    this.turtleHistory.push(realTurtle2);
+                }
+                this.currTurtle = realTurtle3;
+                if (this.satisfyConstraints()) {
+                    console.log('push real turtle 3');
+                    this.turtleHistory.push(realTurtle3);
+                }
+            } else {
+                // Branching of 1
+                let rotateAmt1 = (120 * Math.random() - 60);
+                let rotateAmt2 = 0
 
-    //         } else if (this.currTurtle.branchNumber == 2) {
-    //             let theta1 = 60 + (Math.random() * 60 - 30);
-    //             let theta2 = -60 + (Math.random() * 60 - 30);
+                let testTurtle1 = new Turtle(vec3.fromValues(this.currTurtle.position[0], this.currTurtle.position[1], this.currTurtle.position[2]), 
+                                            this.currTurtle.orientation,
+                                            this.currTurtle.branchNumber - 1);
+                testTurtle1.target = this.currTurtle.target;
+                let testTurtle2 = new Turtle(vec3.fromValues(this.currTurtle.position[0], this.currTurtle.position[1], this.currTurtle.position[2]), 
+                                            this.currTurtle.orientation,
+                                            this.currTurtle.branchNumber - 1);
+                testTurtle2.target = this.currTurtle.target;
 
-    //             let realTurtle1 = new Turtle(vec3.fromValues(this.currTurtle.position[0], this.currTurtle.position[1], this.currTurtle.position[2]), 
-    //                                          vec3.fromValues(this.currTurtle.forward[0], this.currTurtle.forward[1], this.currTurtle.forward[2]), 
-    //                                          vec3.fromValues(this.currTurtle.right[0], this.currTurtle.right[1], this.currTurtle.right[2]),
-    //                                          this.currTurtle.depth);
+                // testTurtle1.rotate(0, 0, rotateAmt2);
+                // testTurtle2.rotate(0, 0, rotateAmt2);
+                testTurtle1.rotate(0, 0, rotateAmt1);
+                testTurtle2.rotate(0, 0, rotateAmt2);
 
-    //             let realTurtle2 = new Turtle(vec3.fromValues(this.currTurtle.position[0], this.currTurtle.position[1], this.currTurtle.position[2]), 
-    //                                          vec3.fromValues(this.currTurtle.forward[0], this.currTurtle.forward[1], this.currTurtle.forward[2]), 
-    //                                          vec3.fromValues(this.currTurtle.right[0], this.currTurtle.right[1], this.currTurtle.right[2]),
-    //                                          this.currTurtle.depth);
-    //             realTurtle1.rotate(theta1);
-    //             realTurtle2.rotate(theta2);
+                testTurtle1.moveForward(0.1);
+                testTurtle2.moveForward(0.1);
 
-    //             this.currTurtle = realTurtle1;
-    //             if (this.placeEdge(this.highwayLength + Math.random() * 0.02 - 0.01, 0.005)) {
-    //                 this.turtleStack.push(realTurtle1);
-    //             }
+                let distance1 = vec2.distance(vec2.fromValues(testTurtle1.position[0], testTurtle1.position[1]), 
+                                              this.currTurtle.target);
+                let distance2 = vec2.distance(vec2.fromValues(testTurtle2.position[0], testTurtle2.position[1]), 
+                                              this.currTurtle.target);
 
-    //             this.currTurtle = realTurtle2;
-    //             if (this.placeEdge(this.highwayLength + Math.random() * 0.02 - 0.01, 0.005)) {
-    //                 this.turtleStack.push(realTurtle2);
-    //             }
-    //         }
-    //     }
+                let pop1 = this.textureHelper.getPopulation(testTurtle1.position[0], testTurtle1.position[1]);
+                let pop2 = this.textureHelper.getPopulation(testTurtle2.position[0], testTurtle2.position[1]);
+                console.log('pop1 = ' + pop1);
+                console.log('pop2 = ' + pop2);
 
+                if (pop1 > pop2) {
+                    this.currTurtle.rotate(0, 0, rotateAmt1);  
+                }  else {
+                    this.currTurtle.rotate(0, 0, rotateAmt2);
+                }
+
+                if (this.satisfyConstraints()) {
+                    this.turtleHistory.push(this.currTurtle);
+                }
+            }
+        }
+    }
+
+    outOfBounds(x: number, y: number) : boolean {
+        if (x < -1 || x > 1 || y < -1 || y > 1) {
+            console.log('out of bounds');
+            return true;
+        }
+        return false;
+    }
+
+    intersect(testEdge: Edge) {
+        let minIntersection = new Intersection();
+        let intersect: boolean = false;
+        for (var i = 0; i < this.edges.length; i++) {
+            let currIntersection = new Intersection();
+            if (currIntersection.intersect(testEdge, this.edges[i])) {
+                intersect = true;
+                let currDist = vec2.distance(vec2.fromValues(testEdge.origin[0], testEdge.origin[1]), currIntersection.getPos()); 
+                let prevDist = vec2.distance(vec2.fromValues(testEdge.origin[0], testEdge.origin[1]), minIntersection.getPos());
+                if (currDist < prevDist) {
+                    minIntersection.position = vec2.fromValues(currIntersection.position[0], currIntersection.position[1]);
+                }
+            }
+        }
+        if (!intersect) {
+            return;
+        }
+        let distance = vec2.distance(vec2.fromValues(testEdge.origin[0], testEdge.origin[1]), minIntersection.getPos());
+        if (distance < 0.000000000000001) {
+            return;
+        }
+        testEdge.setLength(distance);
+    }
+
+    snapToIntersection(e: Edge) {
+        let endpointX = e.endpoint[0];
+        let endpointY = e.endpoint[1];
+        let radius = e.length / 2.0;
+        let snap = false;
+        
+
+        let minIntersection = new Intersection();
+        let minDist = 1000000;
+        for (var i = 0; i < this.intersections.length; i++) {
+            let intersectionPoint = vec2.fromValues(this.intersections[i].getPos()[0], this.intersections[i].getPos()[1]);
+            let currDist = vec2.distance(vec2.fromValues(endpointX, endpointY), intersectionPoint); 
+            if (currDist < radius && currDist < minDist) {
+                snap = true;
+                minIntersection = this.intersections[i];
+                minDist = currDist;
+            } 
+        }
+        if (snap) {
+            let newDirection = vec2.fromValues(minIntersection.position[0] - e.origin[0], minIntersection.position[1] - e.origin[1]);
+            let oldDirection = vec2.fromValues(e.direction[0], e.direction[1]);
+            let angle = vec2.angle(oldDirection, newDirection);
+            angle = 180.0 * angle / Math.PI;
+            this.currTurtle.rotate(0, 0, angle);
+            let forward = this.currTurtle.getForward();
+            e.setDirection(vec3.fromValues(forward[0], forward[1], 0));
+            e.setLength(vec2.distance(vec2.fromValues(e.origin[0], e.origin[1]), minIntersection.getPos()));
+        }
+    }
+
+
+    satisfyConstraints() : boolean {
+        let forward = this.currTurtle.getForward(); 
+        let newEdge = new Edge(this.currTurtle.position, this.highwayLength + Math.random() * 0.02 - 0.01,
+                               vec3.fromValues(forward[0], forward[1], forward[2]), this.width);
+        let prevLength = newEdge.length;
+        this.intersect(newEdge);
+        this.snapToIntersection(newEdge);
+        let newLength = newEdge.length;
+
+        // if (this.textureHelper.getElevation(newEdge.origin[0], newEdge.origin[1]) < 0.35 || 
+        //     this.textureHelper.getElevation(newEdge.endpoint[0], newEdge.endpoint[1]) < 0.35) {
+        //     // Check if road is under the sea
+        //     return false;
+        // } 
+        if (this.outOfBounds(newEdge.endpoint[0], newEdge.endpoint[1])) {
+            // Check if road is out of bounds
+            console.log('satisfyConstraints: road is out of bounds');
+            return false;
+        } else {
+            this.highwayEdges.push(newEdge);
+            let currIntersection = new Intersection();
+            currIntersection.setPos(vec2.fromValues(newEdge.endpoint[0], newEdge.endpoint[1]));
+            this.intersections.push(currIntersection);
+            let transform = this.currTurtle.getTransformationMatrix('highway');
+
+            this.highwayT.push(transform);
+            this.currTurtle.moveForward(newEdge.length);
+            console.log('Moved turtle forward by: ' + newEdge.length);
             
-    // }
+            console.log('constraint is satisfied!');
+            return true;
+        }
+    }
 
     expandSingleChar(char: string) : string {
         // Use the expansion rule(s) that correspond with the given char
