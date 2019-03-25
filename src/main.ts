@@ -12,8 +12,8 @@ import LSystem from './lsystem/LSystem';
 // Define an object with application parameters and button callbacks
 // This will be referred to by dat.GUI's functions that add GUI elements.
 const controls = {
-  'Show pop. density': true,
-  'Show terrain elevation': false,
+  'Show pop. density': false,
+  'Show terrain elevation': true,
   'Show land vs. water': false,
   'Iterations': 100,
   'Rotation angle': 120
@@ -30,6 +30,10 @@ let time: number = 0.0;
 
 let prevIter: number = 100;
 let prevRotation: number = 120;
+
+let showPopDensity: boolean = false;
+let showTerrainElevation: boolean = true;
+let showTerrainBinary: boolean = false;
 
 
 function loadScene() {
@@ -176,12 +180,14 @@ function main() {
   gui.add(controls, 'Show terrain elevation').listen().onChange(
     function(){
       controls["Show land vs. water"] = false;
-      controls["Show terrain elevation"] = true;
+      controls["Show terrain elevation"] = !showTerrainElevation;
+      showTerrainElevation = !showTerrainElevation;
     });
   gui.add(controls, 'Show land vs. water').listen().onChange(
     function() {
       controls["Show terrain elevation"] = false;
-      controls["Show land vs. water"] = true;
+      controls["Show land vs. water"] = !showTerrainBinary;
+      showTerrainBinary = !showTerrainBinary;
     });
   gui.add(controls, 'Iterations', 10, 200);
   gui.add(controls, 'Rotation angle', 0, 360);
