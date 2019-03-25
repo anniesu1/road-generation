@@ -38,7 +38,7 @@ export default class LSystem {
     city2: vec2 = vec2.fromValues(-0.3, 0.2);
     city3: vec2 = vec2.fromValues(0.9, -0.8);
 
-    highwayLength: number = 0.08;
+    highwayLength: number = 0.1;
 
     constructor(axiom: string, numIterations: number, rotationAngle: number, 
                 highwayT: mat4[], roadT: mat4[], width: number, height: number, 
@@ -89,7 +89,7 @@ export default class LSystem {
         console.log('width: ' +  this.width);
         console.log('height: ' + this.height);
         this.currTurtle = new Turtle(vec3.fromValues(-0.8, -0.5, 1), quat.create(), 1);
-        this.highwayT.push(this.currTurtle.getTransformationMatrix('square'));
+        // this.highwayT.push(this.currTurtle.getTransformationMatrix('square'));
         this.currTurtle.target = this.city2;
         this.turtleHistory.push(this.currTurtle);
         let intersection1 = new Intersection();
@@ -99,7 +99,7 @@ export default class LSystem {
         this.currTurtle = new Turtle(vec3.fromValues(-0.3, 0.2, 1), quat.create(), 1);
         this.currTurtle.target = this.city3;
         this.turtleHistory.push(this.currTurtle);
-        this.highwayT.push(this.currTurtle.getTransformationMatrix('square'));
+        // this.highwayT.push(this.currTurtle.getTransformationMatrix('square'));
 
         let intersection2 = new Intersection();
         intersection2.setPos(vec2.fromValues(this.currTurtle.position[0], this.currTurtle.position[1]));
@@ -109,7 +109,7 @@ export default class LSystem {
         this.currTurtle.rotate(0, 0, 60);
         this.currTurtle.target = this.city1;
         this.turtleHistory.push(this.currTurtle);
-        this.highwayT.push(this.currTurtle.getTransformationMatrix('square'));
+        // this.highwayT.push(this.currTurtle.getTransformationMatrix('square'));
         this.currTurtle.moveForward(0.1);
 //        this.highwayT.push(this.currTurtle.getTransformationMatrix('highway'));
 
@@ -317,37 +317,6 @@ export default class LSystem {
             console.log('constraint is satisfied!');
             return true;
         }
-    }
-
-    expandSingleChar(char: string) : string {
-        // Use the expansion rule(s) that correspond with the given char
-        let rule: ExpansionRule;
-        rule = this.expansionRules.get(char);
-        if (!rule) {
-            return char;
-        }
-        let expansion = rule.expand();
-        if (expansion === "") {
-            return char;
-        }
-        return expansion;
-    }
-
-    // Iterate over each char in the axiom and replace it with its expansion
-    expandGrammar() : string {
-        let output = this.grammar;
-
-        for (let i = 0; i < this.numIterations; i++) {
-            // Expand [numIterations] number of times
-            let currOutput = '';
-            for (let j = 0; j < output.length; j++) {
-                currOutput += this.expandSingleChar(output.charAt(j));
-            }
-            output = currOutput;
-        }
-
-        this.grammar = output;
-        return output;
     }
 
     setInitialDrawingRules() {
