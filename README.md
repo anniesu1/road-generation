@@ -2,7 +2,7 @@
 Pennkey: anniesu1
 
 ## Demo
-[Link](anniesu1.github.io/road-generation)
+[Link](https://anniesu1.github.io/road-generation/)
 
 ## Resources
 - Sig Graph paper on [Procedural Modeling of Cities](proceduralCityGeneration.pdf) 
